@@ -104,14 +104,6 @@ jobs:
           printf 'COOMI_BUNDLE=%s\n' "$bundle_path" >> "$GITHUB_ENV"
           printf 'stage=%s packages=%s\n' "$COOMI_REQUESTED_STAGE" "$build_packages"
 
-      - name: Cache Termux build directory
-        uses: actions/cache@v4
-        with:
-          path: ~/.termux-build
-          key: coomi-termux-${{ runner.os }}-4dc8135244ea3909858aaf441f37cc076fe63db7-aarch64-api24-${{ hashFiles('config/build.env', 'patches/coomi-prefix.patch') }}
-          restore-keys: |
-            coomi-termux-${{ runner.os }}-4dc8135244ea3909858aaf441f37cc076fe63db7-aarch64-api24-
-
       - name: Prepare pinned Termux checkout
         shell: bash
         run: |
@@ -124,7 +116,6 @@ jobs:
         run: |
           set -euo pipefail
           read -r -a build_package_args <<< "$COOMI_BUILD_PACKAGES"
-          export TERMUX_DOCKER_RUN_EXTRA_ARGS="--volume ${HOME}/.termux-build:/home/builder/.termux-build"
           ./scripts/run-docker.sh ./build-package.sh \
             -a "$TERMUX_ARCH" \
             --format debian \

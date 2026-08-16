@@ -38,9 +38,9 @@ scripts/test-static.sh           Local contract and shell syntax check
 
 ## Formal build path
 
-The supported build path is GitHub Actions. It runs on Ubuntu, caches the
-Termux build directory, fetches the pinned upstream checkout into the runner
-workspace, and invokes the selected package roots through:
+The supported build path is GitHub Actions. It runs on Ubuntu, keeps Docker's
+build directories container-local, fetches the pinned upstream checkout into
+the runner workspace, and invokes the selected package roots through:
 
 ```text
 ./scripts/run-docker.sh -m ./build-package.sh -a aarch64 \

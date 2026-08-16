@@ -98,7 +98,10 @@ grep -Fq 'COOMI_ARTIFACT_NAME}-unsigned' "$workflow_file"
 grep -Fq 'build_package_args' "$workflow_file"
 grep -Fq 'bash scripts/prepare-termux-packages.sh "$TERMUX_DIR"' "$workflow_file"
 grep -Fq 'scripts/run-docker.sh' "$workflow_file"
-grep -Fq 'TERMUX_DOCKER_RUN_EXTRA_ARGS="--volume ${HOME}/.termux-build:/home/builder/.termux-build"' "$workflow_file"
+if grep -Eq 'actions/cache@|TERMUX_DOCKER_RUN_EXTRA_ARGS|\.termux-build' "$workflow_file"; then
+	printf 'workflow must keep Docker build directories container-local\n' >&2
+	exit 1
+fi
 if grep -Fq 'scripts/run-docker.sh -m' "$workflow_file"; then
 	printf 'workflow must not mount the host /data directory\n' >&2
 	exit 1
