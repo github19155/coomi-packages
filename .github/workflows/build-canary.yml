@@ -124,7 +124,8 @@ jobs:
         run: |
           set -euo pipefail
           read -r -a build_package_args <<< "$COOMI_BUILD_PACKAGES"
-          ./scripts/run-docker.sh -m ./build-package.sh \
+          export TERMUX_DOCKER_RUN_EXTRA_ARGS="--volume ${HOME}/.termux-build:/home/builder/.termux-build"
+          ./scripts/run-docker.sh ./build-package.sh \
             -a "$TERMUX_ARCH" \
             --format debian \
             --library bionic \
