@@ -2,17 +2,18 @@
 
 GitHub Actions is the reproducible build boundary. The dispatch stage is
 checked against `config/dependency-closures.csv` before any upstream checkout.
-Only the `bash` row is currently enabled. Reserved rows document verified
-upstream package roots but fail before preparation and produce no artifact.
+All six declared rows are currently enabled. Each selected row must match its
+configured roots before preparation and can then enter the recursive local
+dependency build and artifact verifier.
 
 | Stage | Status | Package roots | Runtime commands supplied |
 | --- | --- | --- | --- |
 | `bash` | enabled | `bash` | `bash` |
-| `bootstrap` | reserved | none | staging bundle only when bash is built |
-| `nodejs-lts` | reserved | `nodejs-lts`, `npm` | `node`, `npm`, `npx` |
-| `python` | reserved | `python`, `python-pip` | `python`, `pip` |
-| `uv` | reserved | `uv` | `uv`, `uvx` |
-| `git-openssh` | reserved | `git`, `openssh` | `git`, `ssh`, `scp`, `sftp` |
+| `bootstrap` | enabled | `bash`, `apt`, `dpkg` | bootstrap shell and package manager |
+| `nodejs-lts` | enabled | `nodejs-lts`, `npm` | `node`, `npm`, `npx` |
+| `python` | enabled | `python`, `python-pip` | `python`, `pip` |
+| `uv` | enabled | `uv` | `uv`, `uvx` |
+| `git-openssh` | enabled | `git`, `openssh` | `git`, `ssh`, `scp`, `sftp` |
 
 The package roots and direct declarations are recorded in
 `config/dependency-closures.csv`. They are intentionally not a hand-written
@@ -33,8 +34,8 @@ For an enabled stage the workflow:
 4. checks that every requested root package is present; and
 5. uploads the complete unsigned output and a deterministic tarball.
 
-The current repository has only static local evidence and only `bash` may
-reach these steps. A stage is considered built only after its GitHub Actions
-job produces artifacts and logs. Signing,
+The current repository has static local evidence plus a bootstrap gate run;
+each stage is considered built only after its GitHub Actions job produces
+artifacts and logs. Signing,
 repository metadata, and phone installation are separate release/runtime steps
 and are deliberately not performed by this workflow.

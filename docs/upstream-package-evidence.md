@@ -18,12 +18,11 @@ the checked-out scripts, not these copied values.
 | `git` | `2.55.0` | curl, expat, iconv, less, OpenSSL, PCRE2, zlib | recommends OpenSSH |
 | `openssh` | `10.5p1` | Kerberos, LDNS, libedit, OpenSSL, auth and SFTP subpackage | emits SFTP subpackage |
 
-The `bash` row is the only enabled manifest root today. The other package
-definitions are evidence for reserved future rows; they are not build claims.
-`apt` and `dpkg` are listed only as upstream package definitions that may be
-needed by a later bootstrap design, not as current bootstrap roots. The builder
-resolves any additional transitive dependencies and emits them in the same
-output directory when a row is enabled. Therefore the manifest is a list of
-roots and a policy, not an attempt to freeze a manually maintained closure.
+All six stage rows are enabled manifest roots, with `bash`, `apt`, and `dpkg`
+forming the bootstrap root set. Enabling a row is a build-path claim, not a
+successful-build claim: the builder must still resolve and compile the
+transitive dependencies on Actions. The builder emits those dependencies in
+the same output directory. Therefore the manifest is a list of roots and a
+policy, not an attempt to freeze a manually maintained closure.
 The upstream commit, local patch, package roots, architecture, API level, and
 library mode are the reproducibility inputs.

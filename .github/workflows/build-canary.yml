@@ -48,7 +48,7 @@ jobs:
             TERMUX_PACKAGE_FORMAT TERMUX_PACKAGE_LIBRARY TERMUX_CANARY_PACKAGE \
             COOMI_ARTIFACT_NAME COOMI_BOOTSTRAP_PACKAGES COOMI_NODEJS_PACKAGES \
             COOMI_PYTHON_PACKAGES COOMI_UV_PACKAGES COOMI_GIT_PACKAGES \
-            COOMI_ENABLED_STAGE COOMI_STAGE_MANIFEST; do
+            COOMI_STAGE_MANIFEST; do
             printf '%s=%s\n' "$name" "${!name}" >> "$GITHUB_ENV"
           done
 
@@ -92,7 +92,6 @@ jobs:
             awk -F, -v stage="$COOMI_REQUESTED_STAGE" 'NR > 1 && $1 == stage { print; exit }' "$manifest_file"
           )
           [[ "$manifest_stage" == "$COOMI_REQUESTED_STAGE" && "$manifest_status" == enabled ]]
-          [[ "$COOMI_REQUESTED_STAGE" == "$COOMI_ENABLED_STAGE" ]]
           configured_roots="${configured_packages// /|}"
           [[ "$build_packages" == "$configured_roots" ]]
           [[ -n "$build_packages" && "$build_packages" != - ]]
@@ -137,7 +136,7 @@ jobs:
           set -euo pipefail
           "$GITHUB_WORKSPACE/scripts/verify-package.sh" "$TERMUX_DIR/output" $COOMI_EXPECTED_PACKAGES
 
-      - name: Create unsigned bootstrap staging bundle
+      - name: Create unsigned stage bundle
         shell: bash
         run: |
           set -euo pipefail

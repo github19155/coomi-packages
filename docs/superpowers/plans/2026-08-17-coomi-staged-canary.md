@@ -1,8 +1,8 @@
 # Coomi Staged Canary Implementation Plan
 
-> **Current status:** Implemented locally with only `bash` enabled. The other
-> stage rows are reserved planning entries; see the staged design and
-> `config/dependency-closures.csv` for the current contract.
+> **Current status:** Implemented and pushed with all six declared stage rows
+> enabled. See the staged design and `config/dependency-closures.csv` for the
+> current contract; successful package builds still require Actions evidence.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -16,12 +16,12 @@ the Coomi runtime package groups.
 ## Global Constraints
 
 - Modify only `E:\ai\coomi\coomi-packages`.
-- Do not push, create a remote, sign packages, or publish a repository.
+- Do not sign packages or publish a formal package repository from this workflow.
 - Keep upstream at `4dc8135244ea3909858aaf441f37cc076fe63db7`.
 - Keep package identity `com.coomi.android` and prefix `/data/data/com.coomi.android/files/usr`.
 - Keep architecture `aarch64`, API level `24`, baseline `apt-android-7`, Debian/bionic, and version suffix `+coomi1`.
-- Keep `bash` as the only enabled build stage.
-- Do not claim that reserved bootstrap, Node.js/npm, Python/pip, uv/uvx, or Git/OpenSSH artifacts exist.
+- Keep all six declared stage rows enabled only when their exact package roots and closure entries are present.
+- Do not claim that an enabled stage has produced artifacts until Actions logs and uploads prove it.
 
 ---
 
@@ -34,10 +34,10 @@ the Coomi runtime package groups.
 
 **Interfaces:**
 - `config/dependency-closures.csv` exposes the exact eight-column header and one row per workflow stage.
-- `config/build.env` exposes `COOMI_STAGE_MANIFEST` and `COOMI_ENABLED_STAGE`.
+- `config/build.env` exposes `COOMI_STAGE_MANIFEST` and the package roots for each stage.
 - The static test rejects missing, duplicate, malformed, or incorrectly enabled stage rows.
 
-- [ ] Add failing assertions for the manifest path, header, six required stages, one enabled bash row, and reserved future rows.
+- [ ] Add failing assertions for the manifest path, header, six required stages, and all enabled rows including the bootstrap roots.
 - [ ] Run `bash scripts/test-static.sh` and confirm it fails because the manifest/config entries are absent.
 - [ ] Add the manifest rows and configuration variables.
 - [ ] Run the static test and confirm the manifest contract passes.
@@ -51,7 +51,7 @@ the Coomi runtime package groups.
 **Interfaces:**
 - `workflow_dispatch.stage` accepts `bootstrap`, `bash`, `nodejs-lts`, `python`, `uv`, and `git-openssh`.
 - The validation step reads the manifest and exits before upstream preparation for any non-enabled stage.
-- The enabled bash path preserves the fixed Docker command and existing verifier/artifact steps.
+- Every enabled stage uses the fixed Docker command, verifier, and unsigned artifact steps.
 
 - [ ] Add failing workflow assertions for `bootstrap`, manifest loading, status rejection, and config-driven artifact naming.
 - [ ] Run the static test and confirm the new workflow assertions fail.
@@ -65,8 +65,8 @@ the Coomi runtime package groups.
 - Modify: `docs/superpowers/specs/2026-08-17-coomi-bash-canary-design.md` only if cross-reference is needed.
 
 **Interfaces:**
-- README documents the CSV fields, status meanings, current bash closure policy, and exact requirements for enabling a future stage.
-- Documentation explicitly states that reserved stages fail before build and produce no artifacts.
+- README documents the CSV fields, status meanings, enabled stage closures, and exact requirements for adding a future stage.
+- Documentation distinguishes an enabled build path from a completed build result.
 
 - [ ] Add the stage table and manifest format to README.
 - [ ] Add the staged design cross-reference if the original canary spec needs a consistency note.

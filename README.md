@@ -16,8 +16,9 @@ Termux Docker/NDK build system.
 - Android API level: `24` (`apt-android-7` baseline)
 - Package format/library: Debian / bionic
 - Version marker: `+coomi1`
-- Canary: `bash` and its dependencies, built locally by the upstream build
-  graph
+- Bootstrap roots: `bash`, `apt`, and `dpkg`
+- Staged roots: `bash`, `nodejs-lts`/`npm`, `python`/`python-pip`, `uv`, and
+  `git`/`openssh`
 
 The current repository has no signing keys, release repository, or publish
 job. Pull requests and manual runs produce unsigned inspection artifacts only.
@@ -39,7 +40,7 @@ scripts/test-static.sh           Local contract and shell syntax check
 
 The supported build path is GitHub Actions. It runs on Ubuntu, caches the
 Termux build directory, fetches the pinned upstream checkout into the runner
-temporary directory, and invokes:
+workspace, and invokes the selected package roots through:
 
 ```text
 ./scripts/run-docker.sh -m ./build-package.sh -a aarch64 \
@@ -48,15 +49,15 @@ temporary directory, and invokes:
 
 The workflow supports `workflow_dispatch`. Its stage input exposes `bash`,
 `bootstrap`, `nodejs-lts`, `python`, `uv`, and `git-openssh`. The stage gate
-reads `config/dependency-closures.csv`: only `bash` is currently `enabled`.
-All other stages are `reserved`, fail before upstream preparation, and produce
-no artifact. A stage is not considered successful until its GitHub Actions
-artifacts and logs have been inspected.
+reads `config/dependency-closures.csv`; all six declared rows are currently
+`enabled`, and the selected row must match its configured package roots before
+upstream preparation. A stage is not considered successful until its GitHub
+Actions artifacts and logs have been inspected.
 
 After the build, the workflow runs `scripts/verify-package.sh`, uploads every
-unsigned `.deb`, and uploads a deterministic unsigned bootstrap staging bundle
-containing those `.deb` files. The bundle is an inspection artifact, not yet
-an installable Android bootstrap zip.
+unsigned `.deb`, and uploads a deterministic unsigned stage bundle containing
+those `.deb` files. The bundle is an inspection artifact, not yet an
+installable Android bootstrap zip.
 
 ## Local static checks
 
@@ -83,20 +84,21 @@ only after inspection.
 ## Staged package groups
 
 `config/dependency-closures.csv` is the source of truth for the stage matrix.
-It records exact package roots and the direct `TERMUX_PKG_DEPENDS`/
-`TERMUX_PKG_RECOMMENDS` declarations observed at the fixed upstream commit.
+It records exact package roots and the direct runtime/build/recommendation
+declarations observed at the fixed upstream commit.
 The upstream `build-package.sh` resolves the transitive closure from the
 patched Coomi checkout; no `-i` or `-I` prebuilt dependency mode is used.
 
 | Stage | Status | Fixed upstream roots | Notes |
 | --- | --- | --- | --- |
-| `bash` | enabled | `bash` | The only current canary |
-| `bootstrap` | reserved | none | The current bash run may upload only a staging tarball |
-| `nodejs-lts` | reserved | `nodejs-lts`, `npm` | `npm` is separate and provides both `npm` and `npx` binaries |
-| `python` | reserved | `python`, `python-pip` | `pip` is supplied by `python-pip` |
-| `uv` | reserved | `uv` | The `uv` package installs both `uv` and `uvx` |
-| `git-openssh` | reserved | `git`, `openssh` | Git recommends OpenSSH; both roots are recorded |
+| `bash` | enabled | `bash` | Shell and recursive dependencies |
+| `bootstrap` | enabled | `bash`, `apt`, `dpkg` | Bootstrap package roots and recursive dependencies |
+| `nodejs-lts` | enabled | `nodejs-lts`, `npm` | `npm` is separate and provides both `npm` and `npx` binaries |
+| `python` | enabled | `python`, `python-pip` | `pip` is supplied by `python-pip` |
+| `uv` | enabled | `uv` | The `uv` package installs both `uv` and `uvx` |
+| `git-openssh` | enabled | `git`, `openssh` | Git recommends OpenSSH; both roots are recorded |
 
-Reserved rows are planning entries, not build claims or placeholder artifacts.
-Enabling one requires a verified package closure, package-specific checks, and
-an artifact contract in the same manifest change.
+`enabled` means the stage may enter the pinned checkout, recursive local
+dependency build, verifier, and unsigned artifact upload. It does not claim a
+successful package build before a completed Actions run provides logs and
+artifacts.

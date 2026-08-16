@@ -28,9 +28,8 @@ source "$ROOT_DIR/config/build.env"
 [[ "${TERMUX_ARCH:-}" == "aarch64" ]]
 [[ "${TERMUX_PKG_API_LEVEL:-}" == "24" ]]
 [[ "${COOMI_VERSION_SUFFIX:-}" == "+coomi1" ]]
-[[ "${COOMI_ENABLED_STAGE:-}" == "bash" ]]
 [[ "${COOMI_STAGE_MANIFEST:-}" == "config/dependency-closures.csv" ]]
-[[ "${COOMI_BOOTSTRAP_PACKAGES:-}" == "-" ]]
+[[ "${COOMI_BOOTSTRAP_PACKAGES:-}" == "bash apt dpkg" ]]
 [[ "${COOMI_NODEJS_PACKAGES:-}" == "nodejs-lts npm" ]]
 [[ "${COOMI_PYTHON_PACKAGES:-}" == "python python-pip" ]]
 [[ "${COOMI_UV_PACKAGES:-}" == "uv" ]]
@@ -48,10 +47,12 @@ done
 
 bash_row="$(awk -F, '$1 == "bash" { print; exit }' "$manifest_file")"
 [[ "$bash_row" == bash,enabled,bash,bash,* ]]
+bootstrap_row="$(awk -F, '$1 == "bootstrap" { print; exit }' "$manifest_file")"
+[[ "$bootstrap_row" == bootstrap,enabled,bootstrap,bash\|apt\|dpkg,* ]]
 enabled_count="$(awk -F, 'NR > 1 && $2 == "enabled" { count += 1 } END { print count + 0 }' "$manifest_file")"
-[[ "$enabled_count" == "1" ]]
-for stage in bootstrap nodejs-lts python uv git-openssh; do
-	awk -F, -v stage="$stage" 'NR > 1 && $1 == stage && $2 == "reserved" { found = 1 } END { exit found ? 0 : 1 }' "$manifest_file"
+[[ "$enabled_count" == "6" ]]
+for stage in "${required_stages[@]}"; do
+	awk -F, -v stage="$stage" 'NR > 1 && $1 == stage && $2 == "enabled" { found = 1 } END { exit found ? 0 : 1 }' "$manifest_file"
 done
 
 while IFS= read -r -d '' script; do
@@ -90,7 +91,6 @@ grep -Fq 'COOMI_GIT_PACKAGES' "$workflow_file"
 grep -Fq 'COOMI_BUILD_PACKAGES' "$workflow_file"
 grep -Fq 'COOMI_EXPECTED_PACKAGES' "$workflow_file"
 grep -Fq 'COOMI_STAGE_MANIFEST' "$workflow_file"
-grep -Fq 'COOMI_ENABLED_STAGE' "$workflow_file"
 grep -Fq 'manifest_status' "$workflow_file"
 grep -Fq 'configured_roots' "$workflow_file"
 grep -Fq 'build_packages="${build_packages//|/ }"' "$workflow_file"
