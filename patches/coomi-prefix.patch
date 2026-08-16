@@ -1,0 +1,49 @@
+diff --git a/scripts/properties.sh b/scripts/properties.sh
+--- a/scripts/properties.sh
++++ b/scripts/properties.sh
+@@ -464,6 +464,6 @@
+ # Default value: `com.termux`
+ ##
+-TERMUX_APP__PACKAGE_NAME="com.termux"
++TERMUX_APP__PACKAGE_NAME="com.coomi.android"
+ TERMUX_APP_PACKAGE="$TERMUX_APP__PACKAGE_NAME" # Deprecated alternative variable for `TERMUX_APP__PACKAGE_NAME`
+ 
+ __termux_build_props__add_variables_validator_actions "TERMUX_APP__PACKAGE_NAME" "app_package_name"
+@@ -2181,10 +2181,10 @@
+ # FIXME: Checking for all variables will be added later in repo
+ # changes pull, currently only `TERMUX_REPO_APP__PACKAGE_NAME` is checked.
+-TERMUX_REPO_APP__PACKAGE_NAME="com.termux"
+-TERMUX_REPO_APP__DATA_DIR="/data/data/com.termux"
+-TERMUX_REPO__CORE_DIR="/data/data/com.termux/termux/core"
+-TERMUX_REPO__APPS_DIR="/data/data/com.termux/termux/app"
+-TERMUX_REPO__ROOTFS="/data/data/com.termux/files"
+-TERMUX_REPO__HOME="/data/data/com.termux/files/home"
+-TERMUX_REPO__PREFIX="/data/data/com.termux/files/usr"
++TERMUX_REPO_APP__PACKAGE_NAME="com.coomi.android"
++TERMUX_REPO_APP__DATA_DIR="/data/data/com.coomi.android"
++TERMUX_REPO__CORE_DIR="/data/data/com.coomi.android/termux/core"
++TERMUX_REPO__APPS_DIR="/data/data/com.coomi.android/termux/app"
++TERMUX_REPO__ROOTFS="/data/data/com.coomi.android/files"
++TERMUX_REPO__HOME="/data/data/com.coomi.android/files/home"
++TERMUX_REPO__PREFIX="/data/data/com.coomi.android/files/usr"
+ 
+@@ -2234,6 +2234,6 @@
+ # Path to CGCT tools
+-CGCT_DEFAULT_PREFIX="/data/data/com.termux/files/usr/glibc"
++CGCT_DEFAULT_PREFIX="/data/data/com.coomi.android/files/usr/glibc"
+ __termux_build_props__add_variables_validator_actions "CGCT_DEFAULT_PREFIX" "safe_absolute_path invalid_termux_prefix_paths"
+ 
+-export CGCT_DIR="/data/data/com.termux/cgct"
++export CGCT_DIR="/data/data/com.coomi.android/cgct"
+ __termux_build_props__add_variables_validator_actions "CGCT_DIR" "safe_absolute_path invalid_termux_prefix_paths"
+diff --git a/scripts/build/termux_step_start_build.sh b/scripts/build/termux_step_start_build.sh
+--- a/scripts/build/termux_step_start_build.sh
++++ b/scripts/build/termux_step_start_build.sh
+@@ -29,6 +29,7 @@
+ 	TERMUX_PKG_FULLVERSION=$TERMUX_PKG_VERSION
+ 	if [ "$TERMUX_PKG_REVISION" != "0" ] || [ "$TERMUX_PKG_FULLVERSION" != "${TERMUX_PKG_FULLVERSION/-/}" ]; then
+ 		# "0" is the default revision, so only include it if the upstream versions contains "-" itself
+ 		TERMUX_PKG_FULLVERSION+="-$TERMUX_PKG_REVISION"
+ 	fi
++	TERMUX_PKG_FULLVERSION+="+coomi1"
+ 	# full format version for pacman

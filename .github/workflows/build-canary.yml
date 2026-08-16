@@ -1,0 +1,157 @@
+name: Coomi Package Stage
+
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: Build stage entry point
+        required: true
+        default: bash
+        type: choice
+        options:
+          - bash
+          - bootstrap
+          - nodejs-lts
+          - python
+          - uv
+          - git-openssh
+
+permissions:
+  contents: read
+
+concurrency:
+  group: coomi-canary-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TERMUX_DIR: ${{ runner.temp }}/coomi-termux-packages
+  COOMI_REQUESTED_STAGE: ${{ inputs.stage || 'bash' }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Check out coomi-packages
+        uses: actions/checkout@v4
+
+      - name: Load fixed build configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          source config/build.env
+          for name in \
+            TERMUX_PACKAGES_REPOSITORY TERMUX_PACKAGES_COMMIT TERMUX_BUILDER_IMAGE_NAME \
+            COOMI_APP_PACKAGE COOMI_DATA_DIR COOMI_PREFIX COOMI_VERSION_SUFFIX \
+            COOMI_ANDROID_API_BASELINE TERMUX_ARCH TERMUX_PKG_API_LEVEL \
+            TERMUX_PACKAGE_FORMAT TERMUX_PACKAGE_LIBRARY TERMUX_CANARY_PACKAGE \
+            COOMI_ARTIFACT_NAME COOMI_BOOTSTRAP_PACKAGES COOMI_NODEJS_PACKAGES \
+            COOMI_PYTHON_PACKAGES COOMI_UV_PACKAGES COOMI_GIT_PACKAGES \
+            COOMI_ENABLED_STAGE COOMI_STAGE_MANIFEST; do
+            printf '%s=%s\n' "$name" "${!name}" >> "$GITHUB_ENV"
+          done
+
+      - name: Validate requested stage
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "$COOMI_REQUESTED_STAGE" in
+            bash)
+              configured_packages="$TERMUX_CANARY_PACKAGE"
+              artifact_name="${COOMI_ARTIFACT_NAME}-unsigned"
+              ;;
+            bootstrap)
+              configured_packages="$COOMI_BOOTSTRAP_PACKAGES"
+              artifact_name="coomi-bootstrap-unsigned"
+              ;;
+            nodejs-lts)
+              configured_packages="$COOMI_NODEJS_PACKAGES"
+              artifact_name="coomi-nodejs-lts-unsigned"
+              ;;
+            python)
+              configured_packages="$COOMI_PYTHON_PACKAGES"
+              artifact_name="coomi-python-unsigned"
+              ;;
+            uv)
+              configured_packages="$COOMI_UV_PACKAGES"
+              artifact_name="coomi-uv-unsigned"
+              ;;
+            git-openssh)
+              configured_packages="$COOMI_GIT_PACKAGES"
+              artifact_name="coomi-git-openssh-unsigned"
+              ;;
+            *)
+              printf 'unsupported stage: %s\n' "$COOMI_REQUESTED_STAGE" >&2
+              exit 2
+              ;;
+          esac
+          manifest_file="$GITHUB_WORKSPACE/$COOMI_STAGE_MANIFEST"
+          [[ -f "$manifest_file" ]]
+          IFS=, read -r manifest_stage manifest_status _package_group build_packages _declared_dependencies _closure_source _build_policy _artifact_policy < <(
+            awk -F, -v stage="$COOMI_REQUESTED_STAGE" 'NR > 1 && $1 == stage { print; exit }' "$manifest_file"
+          )
+          [[ "$manifest_stage" == "$COOMI_REQUESTED_STAGE" && "$manifest_status" == enabled ]]
+          [[ "$COOMI_REQUESTED_STAGE" == "$COOMI_ENABLED_STAGE" ]]
+          configured_roots="${configured_packages// /|}"
+          [[ "$build_packages" == "$configured_roots" ]]
+          [[ -n "$build_packages" && "$build_packages" != - ]]
+          build_packages="${build_packages//|/ }"
+          expected_packages="$build_packages"
+          bundle_path="${RUNNER_TEMP}/${artifact_name}.tar.gz"
+          printf 'COOMI_BUILD_PACKAGES=%s\n' "$build_packages" >> "$GITHUB_ENV"
+          printf 'COOMI_EXPECTED_PACKAGES=%s\n' "$expected_packages" >> "$GITHUB_ENV"
+          printf 'COOMI_STAGE_ARTIFACT=%s\n' "$artifact_name" >> "$GITHUB_ENV"
+          printf 'COOMI_BUNDLE=%s\n' "$bundle_path" >> "$GITHUB_ENV"
+          printf 'stage=%s packages=%s\n' "$COOMI_REQUESTED_STAGE" "$build_packages"
+
+      - name: Cache Termux build directory
+        uses: actions/cache@v4
+        with:
+          path: ~/.termux-build
+          key: coomi-termux-${{ runner.os }}-4dc8135244ea3909858aaf441f37cc076fe63db7-aarch64-api24-${{ hashFiles('config/build.env', 'patches/coomi-prefix.patch') }}
+          restore-keys: |
+            coomi-termux-${{ runner.os }}-4dc8135244ea3909858aaf441f37cc076fe63db7-aarch64-api24-
+
+      - name: Prepare pinned Termux checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          scripts/prepare-termux-packages.sh "$TERMUX_DIR"
+
+      - name: Build selected package roots and dependencies in official Docker image
+        shell: bash
+        working-directory: ${{ env.TERMUX_DIR }}
+        run: |
+          set -euo pipefail
+          read -r -a build_package_args <<< "$COOMI_BUILD_PACKAGES"
+          ./scripts/run-docker.sh -m ./build-package.sh \
+            -a "$TERMUX_ARCH" \
+            --format debian \
+            --library bionic \
+            -- "${build_package_args[@]}"
+
+      - name: Verify every generated package
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$GITHUB_WORKSPACE/scripts/verify-package.sh" "$TERMUX_DIR/output" $COOMI_EXPECTED_PACKAGES
+
+      - name: Create unsigned bootstrap staging bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t packages < <(find "$TERMUX_DIR/output" -maxdepth 1 -type f -name '*.deb' -printf '%f\n' | sort)
+          (( ${#packages[@]} > 0 ))
+          tar --sort=name --mtime='UTC 1970-01-01' --owner=0 --group=0 --numeric-owner \
+            -czf "$COOMI_BUNDLE" -C "$TERMUX_DIR/output" "${packages[@]}"
+
+      - name: Upload unsigned canary artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.COOMI_STAGE_ARTIFACT }}
+          if-no-files-found: error
+          retention-days: 7
+          path: |
+            ${{ env.TERMUX_DIR }}/output/*.deb
+            ${{ env.COOMI_BUNDLE }}
