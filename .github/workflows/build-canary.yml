@@ -116,7 +116,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          scripts/prepare-termux-packages.sh "$TERMUX_DIR"
+          bash scripts/prepare-termux-packages.sh "$TERMUX_DIR"
 
       - name: Build selected package roots and dependencies in official Docker image
         shell: bash
@@ -134,7 +134,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          "$GITHUB_WORKSPACE/scripts/verify-package.sh" "$TERMUX_DIR/output" $COOMI_EXPECTED_PACKAGES
+          bash "$GITHUB_WORKSPACE/scripts/verify-package.sh" "$TERMUX_DIR/output" $COOMI_EXPECTED_PACKAGES
 
       - name: Create unsigned stage bundle
         shell: bash
