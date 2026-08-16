@@ -25,7 +25,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  TERMUX_DIR: ${{ runner.temp }}/coomi-termux-packages
+  TERMUX_DIR: ${{ github.workspace }}/.coomi-termux-packages
   COOMI_REQUESTED_STAGE: ${{ inputs.stage || 'bash' }}
 
 jobs:
@@ -129,7 +129,7 @@ jobs:
             -a "$TERMUX_ARCH" \
             --format debian \
             --library bionic \
-            -- "${build_package_args[@]}"
+            "${build_package_args[@]}"
 
       - name: Verify every generated package
         shell: bash
