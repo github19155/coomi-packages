@@ -88,6 +88,14 @@ TERMUX_TOOLS_BUILD_FILE="$TERMUX_DIR/packages/termux-tools/build.sh"
 [[ -f "$TERMUX_TOOLS_BUILD_FILE" ]] || fail "upstream termux-tools build definition missing"
 grep -Fq 'coomi_termux_tools_rewrite_paths' "$TERMUX_TOOLS_BUILD_FILE" || \
 	fail "missing Coomi termux-tools cleanup hook in $TERMUX_TOOLS_BUILD_FILE"
+if ! awk '
+/^termux_step_create_debscripts\(\) \{/ { inside = 1; next }
+/^}/ && inside { inside = 0 }
+inside && /grep -aFq/ && /preinst/ { found = 1 }
+END { exit found ? 0 : 1 }
+' "$TERMUX_TOOLS_BUILD_FILE"; then
+	fail "missing in-function termux-tools preinst path rewrite in $TERMUX_TOOLS_BUILD_FILE"
+fi
 grep -Fq 'sed -i "s#/data/data/com.termux#${TERMUX_APP__DATA_DIR}#g"' "$TERMUX_TOOLS_BUILD_FILE" || \
 	fail "missing legacy path replacement in $TERMUX_TOOLS_BUILD_FILE"
 

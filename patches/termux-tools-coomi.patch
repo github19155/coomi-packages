@@ -32,7 +32,7 @@ diff --git a/packages/termux-tools/build.sh b/packages/termux-tools/build.sh
 +	cat <<- EOF > ./preinst
 +	$(cat "$TERMUX_PKG_BUILDDIR/preinst")
 +	EOF
-+}
-+	if grep -Fq '/data/data/com.termux' ./preinst; then
++	if grep -aFq '/data/data/com.termux' ./preinst; then
 +		sed -i "s#/data/data/com.termux#${TERMUX_APP__DATA_DIR}#g" ./preinst
 +	fi
++}

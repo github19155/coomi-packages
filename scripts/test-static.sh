@@ -73,7 +73,17 @@ grep -Fq 'sed -i "s#/data/data/com.termux#${TERMUX_APP__DATA_DIR}#g"' "$ROOT_DIR
 grep -Fq 'find "$TERMUX_PKG_MASSAGEDIR" -type f -print0' "$ROOT_DIR/patches/termux-exec-coomi.patch"
 grep -Fq 'grep -aFq' "$ROOT_DIR/patches/termux-exec-coomi.patch"
 grep -Fq 'packages/termux-tools/build.sh' "$ROOT_DIR/patches/termux-tools-coomi.patch"
-grep -Fq 'coomi_termux_tools_rewrite_paths' "$ROOT_DIR/patches/termux-tools-coomi.patch"
+tools_patch="$ROOT_DIR/patches/termux-tools-coomi.patch"
+grep -Fq 'coomi_termux_tools_rewrite_paths' "$tools_patch"
+if ! awk '
+/^\+termux_step_create_debscripts\(\) \{/ { inside = 1; next }
+/^\+\}/ && inside { inside = 0 }
+/^\+.*grep -aFq/ && index($0, "preinst") && inside { found = 1 }
+END { exit found ? 0 : 1 }
+' "$tools_patch"; then
+	printf 'termux-tools preinst rewrite must run inside termux_step_create_debscripts\n' >&2
+	exit 1
+fi
 
 prepare_file="$ROOT_DIR/scripts/prepare-termux-packages.sh"
 grep -Fq 'git fetch --depth 1 origin "$TERMUX_PACKAGES_COMMIT"' "$prepare_file"
