@@ -31,11 +31,14 @@ For an enabled stage the workflow:
 3. checks that every `.deb` has `Architecture: aarch64` or Debian's
    architecture-independent `Architecture: all`, has the `+coomi1` version
    suffix, and contains no `/data/data/com.termux` path. Every ELF inside
-   either package type must still be ELF64/AArch64 with a Coomi prefix RUNPATH;
+   either package type must still be ELF64/AArch64. If an ELF has an `RPATH`
+   or `RUNPATH`, it must not contain the legacy Termux path or an app data path
+   outside the Coomi prefix; missing tags are allowed;
 4. checks that every requested root package is present; and
 5. always uploads a diagnostic artifact when package output exists, while the
    verified unsigned output and deterministic tarball are uploaded only after
-   the verifier succeeds.
+   the verifier succeeds. The diagnostic artifact is a tar.gz archive so
+   original Debian filenames, including epoch `:` characters, are preserved.
 
 The current repository has static local evidence plus a bootstrap gate run;
 each stage is considered built only after its GitHub Actions job produces

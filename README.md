@@ -63,13 +63,14 @@ reads `config/dependency-closures.csv`; all six declared rows are currently
 upstream preparation. A stage is not considered successful until its GitHub
 Actions artifacts and logs have been inspected.
 
-After the build, the workflow runs `scripts/verify-package.sh`, uploads every
-unsigned `.deb`, and uploads a deterministic unsigned stage bundle containing
-those `.deb` files. If verification fails after any `.deb` output exists, an
-additional `-diagnostic` artifact still uploads the raw package output. The
-verified package artifact and deterministic bundle are created only after
-verification succeeds. The bundle is an inspection artifact, not yet an
-installable Android bootstrap zip.
+After the build, the workflow runs `scripts/verify-package.sh` and creates a
+deterministic unsigned stage bundle containing the original `.deb` files. If
+verification fails after any `.deb` output exists, an additional `-diagnostic`
+artifact still uploads those files inside a tar.gz archive. This avoids
+`upload-artifact` filename restrictions on Debian epoch versions such as
+`1:2026.07.16`. The verified package artifact and deterministic bundle are
+created only after verification succeeds. The bundle is an inspection
+artifact, not yet an installable Android bootstrap zip.
 
 ## Local static checks
 
@@ -92,7 +93,9 @@ bash scripts/test-verify-package.sh
 
 Debian package metadata may use `Architecture: all` for architecture-
 independent scripts or data. Any ELF found inside any package is still
-required to be ELF64/AArch64 and to carry the Coomi library RUNPATH.
+required to be ELF64/AArch64. An existing ELF `RPATH` or `RUNPATH` must not
+refer to Termux or another app data path; missing dynamic search tags are
+allowed.
 
 To validate the pinned patch locally when Git and network access are available:
 

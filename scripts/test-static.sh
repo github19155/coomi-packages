@@ -82,6 +82,14 @@ grep -Fq 'readelf -d' "$verify_file"
 grep -Fq 'COOMI_VERSION_SUFFIX' "$verify_file"
 grep -Fq '/data/data/com.termux' "$verify_file"
 grep -Fq '[[ "$architecture" == "$TERMUX_ARCH" || "$architecture" == "all" ]]' "$verify_file"
+grep -Fq 'find "$control_dir" "$data_dir" -type f -print0' "$verify_file"
+grep -Fq 'find "$control_dir" "$data_dir" -type l -print0' "$verify_file"
+grep -Fq 'readlink --' "$verify_file"
+grep -Fq 'RPATH/RUNPATH' "$verify_file"
+if grep -Fq 'grep -R' "$verify_file" || grep -Fq 'has no RUNPATH' "$verify_file"; then
+	printf 'verifier must not follow extracted symlinks or require RUNPATH\n' >&2
+	exit 1
+fi
 
 workflow_file="$ROOT_DIR/.github/workflows/build-canary.yml"
 grep -Fq 'pull_request:' "$workflow_file"
@@ -124,6 +132,14 @@ grep -Fq 'expected-package' "$verify_file"
 grep -Fq 'upload-artifact' "$workflow_file"
 grep -Fq "if: \${{ always() && hashFiles('.coomi-termux-packages/output/*.deb') != '' }}" "$workflow_file"
 grep -Fq 'name: ${{ env.COOMI_STAGE_ARTIFACT }}-diagnostic' "$workflow_file"
+grep -Fq 'diagnostic_archive="$RUNNER_TEMP/${COOMI_STAGE_ARTIFACT}-diagnostic.tar.gz"' "$workflow_file"
+grep -Fq 'tar --sort=name' "$workflow_file"
+grep -Fq 'path: ${{ runner.temp }}/${{ env.COOMI_STAGE_ARTIFACT }}-diagnostic.tar.gz' "$workflow_file"
+grep -Fq 'path: ${{ env.COOMI_BUNDLE }}' "$workflow_file"
+if grep -Fq 'safe_name=' "$workflow_file" || grep -Fq 'filename-map.tsv' "$workflow_file"; then
+	printf 'workflow must archive original deb filenames instead of renaming them\n' >&2
+	exit 1
+fi
 grep -Fq 'if: ${{ success() }}' "$workflow_file"
 if grep -Eiq '(^|[[:space:]])(gpg|apksigner|dpkg-sig|aptly|reprepro)([[:space:]]|$)|(^|[[:space:]])publish([[:space:]]|$)' "$workflow_file"; then
 	printf 'workflow contains a forbidden signing or publishing command\n' >&2

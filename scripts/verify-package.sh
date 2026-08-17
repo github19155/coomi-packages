@@ -20,6 +20,7 @@ EXPECTED_PACKAGES=("$@")
 command -v dpkg-deb >/dev/null || fail "dpkg-deb is required"
 command -v file >/dev/null || fail "file is required"
 command -v readelf >/dev/null || fail "readelf is required"
+command -v readlink >/dev/null || fail "readlink is required"
 
 mapfile -t packages < <(find "$OUTPUT_DIR" -maxdepth 1 -type f -name '*.deb' -print | sort)
 (( ${#packages[@]} > 0 )) || fail "no .deb files found in $OUTPUT_DIR"
@@ -53,12 +54,18 @@ for package in "${packages[@]}"; do
 		fail "$base_name architecture is $architecture, expected $TERMUX_ARCH or all"
 	[[ "$version" == *"$COOMI_VERSION_SUFFIX" ]] || fail "$base_name version lacks $COOMI_VERSION_SUFFIX: $version"
 
-	if LC_ALL=C grep -R -aFq -- "$LEGACY_PREFIX" "$control_dir" "$data_dir"; then
-		fail "$base_name extracted files contain legacy path $LEGACY_PREFIX"
-	fi
-	if find "$control_dir" "$data_dir" -print | LC_ALL=C grep -Fq -- "$LEGACY_PREFIX"; then
-		fail "$base_name extracted path contains legacy path $LEGACY_PREFIX"
-	fi
+	while IFS= read -r -d '' file_path; do
+		if LC_ALL=C grep -aFq -- "$LEGACY_PREFIX" "$file_path"; then
+			fail "$base_name extracted file contains legacy path $LEGACY_PREFIX: $file_path"
+		fi
+	done < <(find "$control_dir" "$data_dir" -type f -print0)
+
+	while IFS= read -r -d '' link_path; do
+		link_target="$(readlink -- "$link_path")"
+		if [[ "$link_target" == *"$LEGACY_PREFIX"* ]]; then
+			fail "$base_name symlink target contains legacy path $LEGACY_PREFIX: $link_path -> $link_target"
+		fi
+	done < <(find "$control_dir" "$data_dir" -type l -print0)
 
 	while IFS= read -r -d '' file_path; do
 		file_info="$(file -b -- "$file_path")"
@@ -73,8 +80,16 @@ for package in "${packages[@]}"; do
 
 		if [[ "$file_info" == *executable* || "$file_info" == *"shared object"* ]]; then
 			dynamic="$(readelf -d -- "$file_path" 2>/dev/null || true)"
-			[[ "$dynamic" == *"(RUNPATH)"* ]] || fail "$file_path has no RUNPATH"
-			[[ "$dynamic" == *"$COOMI_PREFIX/lib"* ]] || fail "$file_path RUNPATH does not contain $COOMI_PREFIX/lib"
+			if grep -Eq '\((RPATH|RUNPATH)\)' <<< "$dynamic"; then
+				if LC_ALL=C grep -aFq -- "$LEGACY_PREFIX" <<< "$dynamic"; then
+					fail "$file_path RPATH/RUNPATH contains legacy path $LEGACY_PREFIX"
+				fi
+				while IFS= read -r app_path; do
+					[[ -n "$app_path" ]] || continue
+					[[ "$app_path" == "$COOMI_PREFIX" || "$app_path" == "$COOMI_PREFIX/"* ]] || \
+						fail "$file_path RPATH/RUNPATH contains a non-Coomi app path: $app_path"
+				done < <(grep -oE '/data/data/[^][[:space:]:]+' <<< "$dynamic" || true)
+			fi
 		fi
 	done < <(find "$control_dir" "$data_dir" -type f -print0)
 done
