@@ -65,6 +65,13 @@ if ! grep -Fqx $'\tTERMUX_PKG_FULLVERSION+="+coomi1"' "$START_BUILD_FILE"; then
 	fail "missing Coomi version suffix in $START_BUILD_FILE"
 fi
 
+TERMUX_EXEC_BUILD_FILE="$TERMUX_DIR/packages/termux-exec/build.sh"
+[[ -f "$TERMUX_EXEC_BUILD_FILE" ]] || fail "upstream termux-exec build definition missing"
+grep -Fq 'coomi_termux_exec_lib=' "$TERMUX_EXEC_BUILD_FILE" || \
+	fail "missing Coomi termux-exec cleanup hook in $TERMUX_EXEC_BUILD_FILE"
+grep -Fq 'sed -i "s#/data/data/com.termux#${TERMUX_APP__DATA_DIR}#g"' "$TERMUX_EXEC_BUILD_FILE" || \
+	fail "missing legacy path replacement in $TERMUX_EXEC_BUILD_FILE"
+
 (
 	cd "$TERMUX_DIR"
 	TERMUX_PKGS__BUILD__REPO_ROOT_DIR="$TERMUX_DIR" \

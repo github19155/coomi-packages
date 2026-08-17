@@ -65,6 +65,9 @@ done < <(find "$ROOT_DIR/scripts" -type f -name '*.sh' -print0)
 patch_file="$ROOT_DIR/patches/coomi-prefix.patch"
 grep -Fq 'TERMUX_APP__PACKAGE_NAME="com.coomi.android"' "$patch_file"
 grep -Fq 'TERMUX_PKG_FULLVERSION+="+coomi1"' "$patch_file"
+grep -Fq 'packages/termux-exec/build.sh' "$patch_file"
+grep -Fq 'coomi_termux_exec_lib=' "$patch_file"
+grep -Fq 'termux-exec-ld-preload-lib' "$patch_file"
 
 prepare_file="$ROOT_DIR/scripts/prepare-termux-packages.sh"
 grep -Fq 'git fetch --depth 1 origin "$TERMUX_PACKAGES_COMMIT"' "$prepare_file"

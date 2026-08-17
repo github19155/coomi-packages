@@ -47,3 +47,18 @@ diff --git a/scripts/build/termux_step_start_build.sh b/scripts/build/termux_ste
  	fi
 +	TERMUX_PKG_FULLVERSION+="+coomi1"
  	# full format version for pacman
+diff --git a/packages/termux-exec/build.sh b/packages/termux-exec/build.sh
+--- a/packages/termux-exec/build.sh
++++ b/packages/termux-exec/build.sh
+@@ -65,3 +65,8 @@
+-		printf "%s\n\n" "Install libtermux-exec_nos_c_tre_runtime-binary-tests for TERMUX_PKG_API_LEVEL '$TERMUX_PKG_API_LEVEL' successful"
+-	fi
+-}
++		printf "%s\n\n" "Install libtermux-exec_nos_c_tre_runtime-binary-tests for TERMUX_PKG_API_LEVEL '$TERMUX_PKG_API_LEVEL' successful"
++	fi
++
++	local coomi_termux_exec_lib="$TERMUX_PKG_MASSAGEDIR/$TERMUX_PREFIX_CLASSICAL/bin/termux-exec-ld-preload-lib"
++	if [[ -f "$coomi_termux_exec_lib" ]]; then
++		sed -i "s#/data/data/com.termux#${TERMUX_APP__DATA_DIR}#g" "$coomi_termux_exec_lib"
++	fi
++}
