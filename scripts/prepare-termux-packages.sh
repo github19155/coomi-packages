@@ -15,8 +15,12 @@ fi
 
 TERMUX_DIR="$1"
 PATCH_FILE="$ROOT_DIR/patches/coomi-prefix.patch"
+TERMUX_EXEC_PATCH_FILE="$ROOT_DIR/patches/termux-exec-coomi.patch"
+TERMUX_TOOLS_PATCH_FILE="$ROOT_DIR/patches/termux-tools-coomi.patch"
 
 [[ -f "$PATCH_FILE" ]] || fail "patch not found: $PATCH_FILE"
+[[ -f "$TERMUX_EXEC_PATCH_FILE" ]] || fail "patch not found: $TERMUX_EXEC_PATCH_FILE"
+[[ -f "$TERMUX_TOOLS_PATCH_FILE" ]] || fail "patch not found: $TERMUX_TOOLS_PATCH_FILE"
 
 if [[ -e "$TERMUX_DIR" && ! -d "$TERMUX_DIR" ]]; then
 	fail "destination exists and is not a directory: $TERMUX_DIR"
@@ -42,6 +46,10 @@ TERMUX_DIR="$(cd -- "$TERMUX_DIR" && pwd)"
 
 	git apply --check "$PATCH_FILE"
 	git apply "$PATCH_FILE"
+	git apply --check "$TERMUX_EXEC_PATCH_FILE"
+	git apply "$TERMUX_EXEC_PATCH_FILE"
+	git apply --check "$TERMUX_TOOLS_PATCH_FILE"
+	git apply "$TERMUX_TOOLS_PATCH_FILE"
 )
 
 PROPERTIES_FILE="$TERMUX_DIR/scripts/properties.sh"
