@@ -2,10 +2,19 @@ diff --git a/packages/termux-tools/build.sh b/packages/termux-tools/build.sh
 --- a/packages/termux-tools/build.sh
 +++ b/packages/termux-tools/build.sh
 @@ -28,9 +28,25 @@
- termux_step_post_make_install() {
- 	TERMUX_PKG_CONFFILES="$(cat "$TERMUX_PKG_BUILDDIR/conffiles")"
- }
- 
+-termux_step_post_make_install() {
+-	TERMUX_PKG_CONFFILES="$(cat "$TERMUX_PKG_BUILDDIR/conffiles")"
+-}
+-
+-termux_step_create_debscripts() {
+-	cat <<- EOF > ./preinst
+-	$(cat "$TERMUX_PKG_BUILDDIR/preinst")
+-	EOF
+-}
++termux_step_post_make_install() {
++	TERMUX_PKG_CONFFILES="$(cat "$TERMUX_PKG_BUILDDIR/conffiles")"
++}
++
 +coomi_termux_tools_rewrite_paths() {
 +	local coomi_termux_tools_root="$TERMUX_PKG_MASSAGEDIR/$TERMUX_PREFIX_CLASSICAL"
 +	while IFS= read -r -d '' coomi_termux_tools_file; do
@@ -19,11 +28,11 @@ diff --git a/packages/termux-tools/build.sh b/packages/termux-tools/build.sh
 +	coomi_termux_tools_rewrite_paths
 +}
 +
- termux_step_create_debscripts() {
- 	cat <<- EOF > ./preinst
- 	$(cat "$TERMUX_PKG_BUILDDIR/preinst")
- 	EOF
++termux_step_create_debscripts() {
++	cat <<- EOF > ./preinst
++	$(cat "$TERMUX_PKG_BUILDDIR/preinst")
++	EOF
++}
 +	if grep -Fq '/data/data/com.termux' ./preinst; then
 +		sed -i "s#/data/data/com.termux#${TERMUX_APP__DATA_DIR}#g" ./preinst
 +	fi
- }
