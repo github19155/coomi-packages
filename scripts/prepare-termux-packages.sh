@@ -72,6 +72,13 @@ grep -Fq 'coomi_termux_exec_lib=' "$TERMUX_EXEC_BUILD_FILE" || \
 grep -Fq 'sed -i "s#/data/data/com.termux#${TERMUX_APP__DATA_DIR}#g"' "$TERMUX_EXEC_BUILD_FILE" || \
 	fail "missing legacy path replacement in $TERMUX_EXEC_BUILD_FILE"
 
+TERMUX_TOOLS_BUILD_FILE="$TERMUX_DIR/packages/termux-tools/build.sh"
+[[ -f "$TERMUX_TOOLS_BUILD_FILE" ]] || fail "upstream termux-tools build definition missing"
+grep -Fq 'coomi_termux_tools_rewrite_paths' "$TERMUX_TOOLS_BUILD_FILE" || \
+	fail "missing Coomi termux-tools cleanup hook in $TERMUX_TOOLS_BUILD_FILE"
+grep -Fq 'sed -i "s#/data/data/com.termux#${TERMUX_APP__DATA_DIR}#g"' "$TERMUX_TOOLS_BUILD_FILE" || \
+	fail "missing legacy path replacement in $TERMUX_TOOLS_BUILD_FILE"
+
 (
 	cd "$TERMUX_DIR"
 	TERMUX_PKGS__BUILD__REPO_ROOT_DIR="$TERMUX_DIR" \
