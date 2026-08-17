@@ -23,12 +23,13 @@ Termux Docker/NDK build system.
 The current repository has no signing keys, release repository, or publish
 job. Pull requests and manual runs produce unsigned inspection artifacts only.
 
-The workflow preflight uses the official wrapper with a one-step root Docker
-exec to make the existing `/home/builder/lib/android-sdk-*` tree writable and
-install the pinned `platforms;android-33` and `build-tools;30.0.3` components.
-A following check and the package build run as the normal `builder` user. This
-is container-local state; no host `.termux-build` volume or Actions cache is
-used.
+The official image's restricted AppArmor profile keeps `/home/builder/lib`
+read-only. The workflow therefore creates a writable SDK root at
+`/home/builder/.termux-build/coomi-android-sdk-9123335`, copies the official
+command-line tools into it, and installs the pinned `platforms;android-33` and
+`build-tools;30.0.3` components. The SDK check and package build run as the
+normal `builder` user. This is container-local state; no host `.termux-build`
+volume or Actions cache is used.
 
 ## Repository layout
 

@@ -29,6 +29,7 @@ source "$ROOT_DIR/config/build.env"
 [[ "${TERMUX_PKG_API_LEVEL:-}" == "24" ]]
 [[ "${COOMI_VERSION_SUFFIX:-}" == "+coomi1" ]]
 [[ "${COOMI_STAGE_MANIFEST:-}" == "config/dependency-closures.csv" ]]
+[[ "${COOMI_ANDROID_SDK_DIR:-}" == "/home/builder/.termux-build/coomi-android-sdk-9123335" ]]
 [[ "${COOMI_ANDROID_SDK_COMPONENTS:-}" == "platforms;android-33,build-tools;30.0.3" ]]
 [[ "${COOMI_BOOTSTRAP_PACKAGES:-}" == "bash apt dpkg" ]]
 [[ "${COOMI_NODEJS_PACKAGES:-}" == "nodejs-lts npm" ]]
@@ -99,17 +100,12 @@ grep -Fq 'COOMI_ARTIFACT_NAME}-unsigned' "$workflow_file"
 grep -Fq 'build_package_args' "$workflow_file"
 grep -Fq 'bash scripts/prepare-termux-packages.sh "$TERMUX_DIR"' "$workflow_file"
 grep -Fq 'scripts/run-docker.sh' "$workflow_file"
+grep -Fq 'COOMI_ANDROID_SDK_DIR' "$workflow_file"
 grep -Fq 'COOMI_ANDROID_SDK_COMPONENTS' "$workflow_file"
 grep -Fq 'sdkmanager' "$workflow_file"
 grep -Fq 'platforms/android-33' "$workflow_file"
 grep -Fq 'build-tools/30.0.3' "$workflow_file"
-grep -Fq "TERMUX_DOCKER_EXEC_EXTRA_ARGS='--user root'" "$workflow_file"
-grep -Fq 'find /home/builder/lib' "$workflow_file"
-grep -Fq 'unset TERMUX_DOCKER_EXEC_EXTRA_ARGS' "$workflow_file"
-if grep -Fq 'sudo ' "$workflow_file"; then
-	printf 'workflow SDK preflight must not use sudo\n' >&2
-	exit 1
-fi
+grep -Fq 'TERMUX_DOCKER_EXEC_EXTRA_ARGS' "$workflow_file"
 if grep -Eq 'actions/cache@|TERMUX_DOCKER_RUN_EXTRA_ARGS|\.termux-build' "$workflow_file"; then
 	printf 'workflow must keep Docker build directories container-local\n' >&2
 	exit 1

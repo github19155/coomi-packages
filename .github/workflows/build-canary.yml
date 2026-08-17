@@ -44,7 +44,8 @@ jobs:
           for name in \
             TERMUX_PACKAGES_REPOSITORY TERMUX_PACKAGES_COMMIT TERMUX_BUILDER_IMAGE_NAME \
             COOMI_APP_PACKAGE COOMI_DATA_DIR COOMI_PREFIX COOMI_VERSION_SUFFIX \
-            COOMI_ANDROID_API_BASELINE COOMI_ANDROID_SDK_COMPONENTS \
+            COOMI_ANDROID_API_BASELINE COOMI_ANDROID_SDK_DIR \
+            COOMI_ANDROID_SDK_COMPONENTS \
             TERMUX_ARCH TERMUX_PKG_API_LEVEL \
             TERMUX_PACKAGE_FORMAT TERMUX_PACKAGE_LIBRARY TERMUX_CANARY_PACKAGE \
             COOMI_ARTIFACT_NAME COOMI_BOOTSTRAP_PACKAGES COOMI_NODEJS_PACKAGES \
@@ -111,18 +112,21 @@ jobs:
           set -euo pipefail
           bash scripts/prepare-termux-packages.sh "$TERMUX_DIR"
 
-      - name: Prepare official Android SDK components as root
+      - name: Prepare container-local Android SDK components
         shell: bash
         working-directory: ${{ env.TERMUX_DIR }}
         run: |
           set -euo pipefail
-          export TERMUX_DOCKER_EXEC_EXTRA_ARGS='--user root'
+          export TERMUX_DOCKER_EXEC_EXTRA_ARGS="--env ANDROID_HOME=$COOMI_ANDROID_SDK_DIR --env ANDROID_SDK_ROOT=$COOMI_ANDROID_SDK_DIR --env COOMI_ANDROID_SDK_COMPONENTS=$COOMI_ANDROID_SDK_COMPONENTS"
           ./scripts/run-docker.sh bash -lc '
             set -euo pipefail
-            sdk_root="$(find /home/builder/lib -mindepth 1 -maxdepth 1 -type d -name "android-sdk-*" -print -quit)"
-            [[ -n "$sdk_root" && -d "$sdk_root/cmdline-tools" ]]
-            chown -R builder:builder "$sdk_root"
-            chmod -R u+rwX "$sdk_root"
+            image_sdk_root="$(find /home/builder/lib -mindepth 1 -maxdepth 1 -type d -name "android-sdk-*" -print -quit)"
+            [[ -n "$image_sdk_root" && -d "$image_sdk_root/cmdline-tools" ]]
+            sdk_root="$ANDROID_HOME"
+            mkdir -p "$sdk_root"
+            if [[ ! -e "$sdk_root/cmdline-tools" ]]; then
+              cp -R "$image_sdk_root/cmdline-tools" "$sdk_root/"
+            fi
             sdk_manager="$(find "$sdk_root/cmdline-tools" -type f -path "*/bin/sdkmanager" -print -quit)"
             [[ -x "$sdk_manager" ]]
             set +o pipefail
@@ -141,10 +145,10 @@ jobs:
         working-directory: ${{ env.TERMUX_DIR }}
         run: |
           set -euo pipefail
-          unset TERMUX_DOCKER_EXEC_EXTRA_ARGS
+          export TERMUX_DOCKER_EXEC_EXTRA_ARGS="--env ANDROID_HOME=$COOMI_ANDROID_SDK_DIR --env ANDROID_SDK_ROOT=$COOMI_ANDROID_SDK_DIR"
           ./scripts/run-docker.sh bash -lc '
             set -euo pipefail
-            sdk_root="$(find /home/builder/lib -mindepth 1 -maxdepth 1 -type d -name "android-sdk-*" -print -quit)"
+            sdk_root="$ANDROID_HOME"
             [[ -n "$sdk_root" && -w "$sdk_root" ]]
             [[ -d "$sdk_root/platforms/android-33" ]]
             [[ -d "$sdk_root/build-tools/30.0.3" ]]
@@ -156,7 +160,7 @@ jobs:
         working-directory: ${{ env.TERMUX_DIR }}
         run: |
           set -euo pipefail
-          unset TERMUX_DOCKER_EXEC_EXTRA_ARGS
+          export TERMUX_DOCKER_EXEC_EXTRA_ARGS="--env ANDROID_HOME=$COOMI_ANDROID_SDK_DIR --env ANDROID_SDK_ROOT=$COOMI_ANDROID_SDK_DIR"
           read -r -a build_package_args <<< "$COOMI_BUILD_PACKAGES"
           ./scripts/run-docker.sh ./build-package.sh \
             -a "$TERMUX_ARCH" \
