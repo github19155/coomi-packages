@@ -9,6 +9,7 @@ required_paths=(
 	"patches/coomi-prefix.patch"
 	"scripts/prepare-termux-packages.sh"
 	"scripts/verify-package.sh"
+	"scripts/test-verify-package.sh"
 	".github/workflows/build-canary.yml"
 )
 
@@ -80,6 +81,7 @@ grep -Fq 'readelf -h' "$verify_file"
 grep -Fq 'readelf -d' "$verify_file"
 grep -Fq 'COOMI_VERSION_SUFFIX' "$verify_file"
 grep -Fq '/data/data/com.termux' "$verify_file"
+grep -Fq '[[ "$architecture" == "$TERMUX_ARCH" || "$architecture" == "all" ]]' "$verify_file"
 
 workflow_file="$ROOT_DIR/.github/workflows/build-canary.yml"
 grep -Fq 'pull_request:' "$workflow_file"
@@ -120,6 +122,9 @@ grep -Fq -- ' bash' "$workflow_file"
 grep -Fq 'bash "$GITHUB_WORKSPACE/scripts/verify-package.sh"' "$workflow_file"
 grep -Fq 'expected-package' "$verify_file"
 grep -Fq 'upload-artifact' "$workflow_file"
+grep -Fq "if: \${{ always() && hashFiles('.coomi-termux-packages/output/*.deb') != '' }}" "$workflow_file"
+grep -Fq 'name: ${{ env.COOMI_STAGE_ARTIFACT }}-diagnostic' "$workflow_file"
+grep -Fq 'if: ${{ success() }}' "$workflow_file"
 if grep -Eiq '(^|[[:space:]])(gpg|apksigner|dpkg-sig|aptly|reprepro)([[:space:]]|$)|(^|[[:space:]])publish([[:space:]]|$)' "$workflow_file"; then
 	printf 'workflow contains a forbidden signing or publishing command\n' >&2
 	exit 1

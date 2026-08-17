@@ -28,11 +28,14 @@ For an enabled stage the workflow:
 
 1. fetches the exact upstream commit and applies `patches/coomi-prefix.patch`;
 2. builds all selected roots with `-a aarch64 --format debian --library bionic`;
-3. checks that every `.deb` has the requested architecture and `+coomi1` version
-   suffix, contains no `/data/data/com.termux` path, and has AArch64 ELF files
-   with a Coomi prefix RUNPATH;
+3. checks that every `.deb` has `Architecture: aarch64` or Debian's
+   architecture-independent `Architecture: all`, has the `+coomi1` version
+   suffix, and contains no `/data/data/com.termux` path. Every ELF inside
+   either package type must still be ELF64/AArch64 with a Coomi prefix RUNPATH;
 4. checks that every requested root package is present; and
-5. uploads the complete unsigned output and a deterministic tarball.
+5. always uploads a diagnostic artifact when package output exists, while the
+   verified unsigned output and deterministic tarball are uploaded only after
+   the verifier succeeds.
 
 The current repository has static local evidence plus a bootstrap gate run;
 each stage is considered built only after its GitHub Actions job produces

@@ -68,10 +68,12 @@ six enabled rows. The npm definition at this commit installs both `npm` and
 2. Load `config/build.env` and the stage manifest.
 3. Reject unknown, reserved, or disabled stages before upstream preparation.
 4. For the selected enabled stage, fetch the fixed upstream commit, apply the Coomi patch, and run the official
-   `scripts/run-docker.sh -m ./build-package.sh` wrapper with
+   `scripts/run-docker.sh ./build-package.sh` wrapper with
    aarch64, Debian, bionic, and API 24 inputs.
-5. Verify every generated `.deb`, reject legacy Termux paths, and upload only
-   verified unsigned `.deb` files plus the unsigned bootstrap staging bundle.
+5. Verify every generated `.deb`, reject legacy Termux paths, and always retain
+   raw `.deb` output as a diagnostic artifact when available. Only a successful
+   verifier produces the verified unsigned `.deb` artifact and bootstrap
+   staging bundle.
 
 No signing key, release repository, or formal package publication is part of
 this workflow.

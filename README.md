@@ -39,6 +39,7 @@ patches/coomi-prefix.patch       Pinned upstream property/version patch
 scripts/prepare-termux-packages.sh
                                   Fetch and patch the exact upstream commit
 scripts/verify-package.sh        Inspect every generated .deb
+scripts/test-verify-package.sh   Regression test package metadata and ELF checks
 scripts/test-static.sh           Local contract and shell syntax check
 .github/workflows/build-canary.yml
                                   The only formal build entry point
@@ -64,7 +65,10 @@ Actions artifacts and logs have been inspected.
 
 After the build, the workflow runs `scripts/verify-package.sh`, uploads every
 unsigned `.deb`, and uploads a deterministic unsigned stage bundle containing
-those `.deb` files. The bundle is an inspection artifact, not yet an
+those `.deb` files. If verification fails after any `.deb` output exists, an
+additional `-diagnostic` artifact still uploads the raw package output. The
+verified package artifact and deterministic bundle are created only after
+verification succeeds. The bundle is an inspection artifact, not yet an
 installable Android bootstrap zip.
 
 ## Local static checks
@@ -78,6 +82,17 @@ bash scripts/test-static.sh
 The check validates fixed values, shell syntax, patch/script contracts, and
 workflow structure. The real Docker/NDK cross-build is intentionally left to
 GitHub Actions; this Windows workspace does not claim that build has run.
+
+On a Linux environment with `aarch64-linux-gnu-gcc`, run the focused verifier
+regression test as well:
+
+```bash
+bash scripts/test-verify-package.sh
+```
+
+Debian package metadata may use `Architecture: all` for architecture-
+independent scripts or data. Any ELF found inside any package is still
+required to be ELF64/AArch64 and to carry the Coomi library RUNPATH.
 
 To validate the pinned patch locally when Git and network access are available:
 

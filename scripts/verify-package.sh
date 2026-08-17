@@ -49,7 +49,8 @@ for package in "${packages[@]}"; do
 	version="$(dpkg-deb -f "$package" Version)"
 	[[ -n "$package_name" ]] || fail "$base_name has no package name"
 	seen_packages["$package_name"]=1
-	[[ "$architecture" == "$TERMUX_ARCH" ]] || fail "$base_name architecture is $architecture, expected $TERMUX_ARCH"
+	[[ "$architecture" == "$TERMUX_ARCH" || "$architecture" == "all" ]] || \
+		fail "$base_name architecture is $architecture, expected $TERMUX_ARCH or all"
 	[[ "$version" == *"$COOMI_VERSION_SUFFIX" ]] || fail "$base_name version lacks $COOMI_VERSION_SUFFIX: $version"
 
 	if LC_ALL=C grep -R -aFq -- "$LEGACY_PREFIX" "$control_dir" "$data_dir"; then

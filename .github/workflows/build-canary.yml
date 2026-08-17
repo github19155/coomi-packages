@@ -174,7 +174,17 @@ jobs:
           set -euo pipefail
           bash "$GITHUB_WORKSPACE/scripts/verify-package.sh" "$TERMUX_DIR/output" $COOMI_EXPECTED_PACKAGES
 
+      - name: Upload build output for diagnostics
+        if: ${{ always() && hashFiles('.coomi-termux-packages/output/*.deb') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.COOMI_STAGE_ARTIFACT }}-diagnostic
+          if-no-files-found: error
+          retention-days: 7
+          path: ${{ env.TERMUX_DIR }}/output/*.deb
+
       - name: Create unsigned stage bundle
+        if: ${{ success() }}
         shell: bash
         run: |
           set -euo pipefail
@@ -184,6 +194,7 @@ jobs:
             -czf "$COOMI_BUNDLE" -C "$TERMUX_DIR/output" "${packages[@]}"
 
       - name: Upload unsigned canary artifacts
+        if: ${{ success() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.COOMI_STAGE_ARTIFACT }}
