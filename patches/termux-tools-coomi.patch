@@ -18,7 +18,7 @@ diff --git a/packages/termux-tools/build.sh b/packages/termux-tools/build.sh
 +coomi_termux_tools_rewrite_paths() {
 +	local coomi_termux_tools_root="$TERMUX_PKG_MASSAGEDIR/$TERMUX_PREFIX_CLASSICAL"
 +	while IFS= read -r -d '' coomi_termux_tools_file; do
-+		if grep -Iq . "$coomi_termux_tools_file" && grep -Fq '/data/data/com.termux' "$coomi_termux_tools_file"; then
++		if grep -aFq '/data/data/com.termux' "$coomi_termux_tools_file"; then
 +			sed -i "s#/data/data/com.termux#${TERMUX_APP__DATA_DIR}#g" "$coomi_termux_tools_file"
 +		fi
 +	done < <(find "$coomi_termux_tools_root" -type f -print0)

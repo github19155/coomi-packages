@@ -36,7 +36,7 @@ diff --git a/packages/termux-exec/build.sh b/packages/termux-exec/build.sh
 +
 +termux_step_post_massage() {
 +	while IFS= read -r -d '' coomi_termux_exec_file; do
-+		if grep -Iq . "$coomi_termux_exec_file" && grep -Fq '/data/data/com.termux' "$coomi_termux_exec_file"; then
++		if grep -aFq '/data/data/com.termux' "$coomi_termux_exec_file"; then
 +			sed -i "s#/data/data/com.termux#${TERMUX_APP__DATA_DIR}#g" "$coomi_termux_exec_file"
 +		fi
 +	done < <(find "$TERMUX_PKG_MASSAGEDIR" -type f -print0)
