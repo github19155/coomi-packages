@@ -23,6 +23,13 @@ Termux Docker/NDK build system.
 The current repository has no signing keys, release repository, or publish
 job. Pull requests and manual runs produce unsigned inspection artifacts only.
 
+The workflow preflight uses the official wrapper with a one-step root Docker
+exec to make the existing `/home/builder/lib/android-sdk-*` tree writable and
+install the pinned `platforms;android-33` and `build-tools;30.0.3` components.
+A following check and the package build run as the normal `builder` user. This
+is container-local state; no host `.termux-build` volume or Actions cache is
+used.
+
 ## Repository layout
 
 ```text
@@ -43,7 +50,7 @@ build directories container-local, fetches the pinned upstream checkout into
 the runner workspace, and invokes the selected package roots through:
 
 ```text
-./scripts/run-docker.sh -m ./build-package.sh -a aarch64 \
+./scripts/run-docker.sh ./build-package.sh -a aarch64 \
   --format debian --library bionic bash
 ```
 
