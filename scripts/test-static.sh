@@ -71,7 +71,7 @@ grep -Fq 'packages/termux-exec/build.sh' "$ROOT_DIR/patches/termux-exec-coomi.pa
 grep -Fq 'coomi_termux_exec_file' "$ROOT_DIR/patches/termux-exec-coomi.patch"
 grep -Fq 'sed -i "s#/data/data/com.termux#${TERMUX_APP__DATA_DIR}#g"' "$ROOT_DIR/patches/termux-exec-coomi.patch"
 grep -Fq 'find "$TERMUX_PKG_MASSAGEDIR" -type f -print0' "$ROOT_DIR/patches/termux-exec-coomi.patch"
-grep -Fq 'grep -Iq .' "$ROOT_DIR/patches/termux-exec-coomi.patch"
+grep -Fq 'grep -aFq' "$ROOT_DIR/patches/termux-exec-coomi.patch"
 grep -Fq 'packages/termux-tools/build.sh' "$ROOT_DIR/patches/termux-tools-coomi.patch"
 grep -Fq 'coomi_termux_tools_rewrite_paths' "$ROOT_DIR/patches/termux-tools-coomi.patch"
 
