@@ -75,8 +75,12 @@ fi
 
 TERMUX_EXEC_BUILD_FILE="$TERMUX_DIR/packages/termux-exec/build.sh"
 [[ -f "$TERMUX_EXEC_BUILD_FILE" ]] || fail "upstream termux-exec build definition missing"
-grep -Fq 'coomi_termux_exec_lib=' "$TERMUX_EXEC_BUILD_FILE" || \
+grep -Fq 'coomi_termux_exec_file' "$TERMUX_EXEC_BUILD_FILE" || \
 	fail "missing Coomi termux-exec cleanup hook in $TERMUX_EXEC_BUILD_FILE"
+grep -Fq 'find "$TERMUX_PKG_MASSAGEDIR" -type f -print0' "$TERMUX_EXEC_BUILD_FILE" || \
+	fail "missing full termux-exec path scan in $TERMUX_EXEC_BUILD_FILE"
+grep -Fq 'grep -Iq .' "$TERMUX_EXEC_BUILD_FILE" || \
+	fail "missing text-file guard in $TERMUX_EXEC_BUILD_FILE"
 grep -Fq 'sed -i "s#/data/data/com.termux#${TERMUX_APP__DATA_DIR}#g"' "$TERMUX_EXEC_BUILD_FILE" || \
 	fail "missing legacy path replacement in $TERMUX_EXEC_BUILD_FILE"
 
