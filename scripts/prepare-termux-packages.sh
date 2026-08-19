@@ -44,8 +44,8 @@ TERMUX_DIR="$(cd -- "$TERMUX_DIR" && pwd)"
 		exit 1
 	}
 
-	git apply --check "$PATCH_FILE"
-	git apply "$PATCH_FILE"
+	git apply --check --unidiff-zero "$PATCH_FILE"
+	git apply --unidiff-zero "$PATCH_FILE"
 	git apply --check "$TERMUX_EXEC_PATCH_FILE"
 	git apply "$TERMUX_EXEC_PATCH_FILE"
 	git apply --check "$TERMUX_TOOLS_PATCH_FILE"
@@ -98,6 +98,14 @@ END { exit found ? 0 : 1 }
 fi
 grep -Fq 'sed -i "s#/data/data/com.termux#${TERMUX_APP__DATA_DIR}#g"' "$TERMUX_TOOLS_BUILD_FILE" || \
 	fail "missing legacy path replacement in $TERMUX_TOOLS_BUILD_FILE"
+
+OPENSSH_SERVICE_TEMPLATE="$TERMUX_DIR/packages/openssh/sv/ssh-agent.run.in"
+[[ -f "$OPENSSH_SERVICE_TEMPLATE" ]] || fail "upstream openssh service template missing"
+grep -Fq '@TERMUX_PREFIX@/var/run/ssh-agent.socket' "$OPENSSH_SERVICE_TEMPLATE" || \
+	fail "missing Coomi prefix placeholder in $OPENSSH_SERVICE_TEMPLATE"
+if grep -Fq '/data/data/com.termux' "$OPENSSH_SERVICE_TEMPLATE"; then
+	fail "legacy Termux path remains in $OPENSSH_SERVICE_TEMPLATE"
+fi
 
 (
 	cd "$TERMUX_DIR"

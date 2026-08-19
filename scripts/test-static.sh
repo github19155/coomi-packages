@@ -12,6 +12,7 @@ required_paths=(
 	"scripts/prepare-termux-packages.sh"
 	"scripts/verify-package.sh"
 	"scripts/test-verify-package.sh"
+	"scripts/test-openssh-prefix.sh"
 	".github/workflows/build-canary.yml"
 )
 
@@ -67,6 +68,8 @@ done < <(find "$ROOT_DIR/scripts" -type f -name '*.sh' -print0)
 patch_file="$ROOT_DIR/patches/coomi-prefix.patch"
 grep -Fq 'TERMUX_APP__PACKAGE_NAME="com.coomi.android"' "$patch_file"
 grep -Fq 'TERMUX_PKG_FULLVERSION+="+coomi1"' "$patch_file"
+grep -Fq 'packages/openssh/sv/ssh-agent.run.in' "$patch_file"
+grep -Fq '@TERMUX_PREFIX@/var/run/ssh-agent.socket' "$patch_file"
 grep -Fq 'packages/termux-exec/build.sh' "$ROOT_DIR/patches/termux-exec-coomi.patch"
 grep -Fq 'coomi_termux_exec_file' "$ROOT_DIR/patches/termux-exec-coomi.patch"
 grep -Fq 'sed -i "s#/data/data/com.termux#${TERMUX_APP__DATA_DIR}#g"' "$ROOT_DIR/patches/termux-exec-coomi.patch"
@@ -85,15 +88,22 @@ END { exit found ? 0 : 1 }
 	exit 1
 fi
 
+openssh_test_file="$ROOT_DIR/scripts/test-openssh-prefix.sh"
+grep -Fq 'git -C "$TEST_ROOT" apply --check' "$openssh_test_file"
+grep -Fq 'generated ssh-agent service' "$openssh_test_file"
+
 prepare_file="$ROOT_DIR/scripts/prepare-termux-packages.sh"
 grep -Fq 'git fetch --depth 1 origin "$TERMUX_PACKAGES_COMMIT"' "$prepare_file"
 grep -Fq 'git apply --check' "$prepare_file"
+grep -Fq 'git apply --check --unidiff-zero "$PATCH_FILE"' "$prepare_file"
 grep -Fq 'TERMUX_DIR="$(cd -- "$TERMUX_DIR" && pwd)"' "$prepare_file"
 grep -Fq 'com.coomi.android' "$prepare_file"
 grep -Fq '/data/data/com.coomi.android/files/usr' "$prepare_file"
 grep -Fq 'coomi_termux_tools_rewrite_paths' "$prepare_file"
 grep -Fq 'termux-exec-coomi.patch' "$prepare_file"
 grep -Fq 'termux-tools-coomi.patch' "$prepare_file"
+grep -Fq 'packages/openssh/sv/ssh-agent.run.in' "$prepare_file"
+grep -Fq 'legacy Termux path remains' "$prepare_file"
 
 verify_file="$ROOT_DIR/scripts/verify-package.sh"
 grep -Fq 'dpkg-deb --control' "$verify_file"
