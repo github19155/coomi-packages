@@ -54,3 +54,15 @@ diff --git a/packages/openssh/sv/ssh-agent.run.in b/packages/openssh/sv/ssh-agen
 @@ -12 +12 @@
 -	#   unix_listener: cannot bind to path /data/data/com.termux/files/usr/var/run/ssh-agent.socket: Address already in use
 +	#   unix_listener: cannot bind to path @TERMUX_PREFIX@/var/run/ssh-agent.socket: Address already in use
+
+diff --git a/packages/termux-auth/build.sh b/packages/termux-auth/build.sh
+--- a/packages/termux-auth/build.sh
++++ b/packages/termux-auth/build.sh
+@@ -16,0 +17,7 @@
++
++termux_step_post_massage() {
++	local coomi_termux_auth_header="$TERMUX_PKG_MASSAGEDIR$TERMUX_PREFIX/include/termux-auth.h"
++	if [[ -f "$coomi_termux_auth_header" ]] && grep -aFq '/data/data/com.termux' "$coomi_termux_auth_header"; then
++		sed -i "s#/data/data/com.termux#${TERMUX_APP__DATA_DIR}#g" "$coomi_termux_auth_header"
++	fi
++}

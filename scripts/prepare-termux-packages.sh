@@ -107,6 +107,13 @@ if grep -Fq '/data/data/com.termux' "$OPENSSH_SERVICE_TEMPLATE"; then
 	fail "legacy Termux path remains in $OPENSSH_SERVICE_TEMPLATE"
 fi
 
+TERMUX_AUTH_BUILD_FILE="$TERMUX_DIR/packages/termux-auth/build.sh"
+[[ -f "$TERMUX_AUTH_BUILD_FILE" ]] || fail "upstream termux-auth build definition missing"
+grep -Fq 'coomi_termux_auth_header' "$TERMUX_AUTH_BUILD_FILE" || \
+	fail "missing Coomi termux-auth header cleanup hook in $TERMUX_AUTH_BUILD_FILE"
+grep -Fq 'sed -i "s#/data/data/com.termux#${TERMUX_APP__DATA_DIR}#g"' "$TERMUX_AUTH_BUILD_FILE" || \
+	fail "missing legacy path replacement in $TERMUX_AUTH_BUILD_FILE"
+
 (
 	cd "$TERMUX_DIR"
 	TERMUX_PKGS__BUILD__REPO_ROOT_DIR="$TERMUX_DIR" \
